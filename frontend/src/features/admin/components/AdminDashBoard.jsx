@@ -12,7 +12,7 @@ import Checkbox from '@mui/material/Checkbox';
 import { selectCategories } from '../../categories/CategoriesSlice'
 import { ProductCard } from '../../products/components/ProductCard'
 import { deleteProductByIdAsync, fetchProductsAsync, selectProductIsFilterOpen, selectProductTotalResults, selectProducts, toggleFilters, undeleteProductByIdAsync } from '../../products/ProductSlice';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {motion} from 'framer-motion'
 import ClearIcon from '@mui/icons-material/Clear';
 import { ITEMS_PER_PAGE } from '../../../constants';
@@ -25,6 +25,7 @@ const sortOptions=[
 export const AdminDashBoard = () => {
 
     const [filters,setFilters]=useState({})
+    const location=useLocation()
     const brands=useSelector(selectBrands)
     const categories=useSelector(selectCategories)
     const [sort,setSort]=useState(null)
@@ -45,6 +46,12 @@ export const AdminDashBoard = () => {
     useEffect(()=>{
         setPage(1)
     },[totalResults])
+
+    useEffect(()=>{
+        const params=new URLSearchParams(location.search)
+        const keyword=params.get('keyword')
+        setFilters((f)=>({ ...f, keyword: keyword || undefined }))
+    },[location.search])
 
     useEffect(()=>{
         const finalFilters={...filters}

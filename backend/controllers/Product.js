@@ -20,11 +20,32 @@ exports.getAll = async (req, res) => {
         let limit=0
 
         if(req.query.brand){
-            filter.brand={$in:req.query.brand}
+            filter.brand={$in:Array.isArray(req.query.brand)?req.query.brand:req.query.brand.split(',')}
         }
 
         if(req.query.category){
-            filter.category={$in:req.query.category}
+            const categoryArray = Array.isArray(req.query.category) ? req.query.category : req.query.category.split(',')
+            filter.category={$in:categoryArray}
+        }
+
+        if(req.query.keyword){
+            const keyword = req.query.keyword.trim()
+            if(keyword.length>0){
+                filter.$or = [
+                    { title: { $regex: keyword, $options: 'i' } },
+                    { description: { $regex: keyword, $options: 'i' } }
+                ]
+            }
+        }
+
+        if(req.query.minPrice || req.query.maxPrice){
+            filter.price = {}
+            if(req.query.minPrice){
+                filter.price.$gte = parseFloat(req.query.minPrice)
+            }
+            if(req.query.maxPrice){
+                filter.price.$lte = parseFloat(req.query.maxPrice)
+            }
         }
 
         if(req.query.user){
@@ -37,13 +58,70 @@ exports.getAll = async (req, res) => {
 
         if(req.query.page && req.query.limit){
 
-            const pageSize=req.query.limit
-            const page=req.query.page
+            const pageSize=parseInt(req.query.limit)
+            const page=parseInt(req.query.page)
 
             skip=pageSize*(page-1)
             limit=pageSize
         }
 
+        // Admin keyword search across multiple attributes (title, description, brand name, category name, numeric fields)
+        // and optional rating filter – uses aggregation so we can match on referenced docs.
+        if(!req.query.user && (req.query.keyword || req.query.rating)){
+            const keyword = (req.query.keyword || '').trim()
+            const isKeywordPresent = keyword.length>0
+            const numericValue = parseFloat(keyword)
+            const isNumeric = !isNaN(numericValue)
+
+            // base filter without keyword's $or (we will apply keyword match in aggregation)
+            const baseMatch = { ...filter }
+            if(baseMatch.$or){ delete baseMatch.$or }
+
+            const minRating = parseFloat(req.query.rating)
+
+            const keywordOr = isKeywordPresent ? [
+                { title: { $regex: keyword, $options: 'i' } },
+                { description: { $regex: keyword, $options: 'i' } },
+                { 'brand.name': { $regex: keyword, $options: 'i' } },
+                { 'category.name': { $regex: keyword, $options: 'i' } },
+                ...(isNumeric ? [
+                    { price: numericValue },
+                    { discountPercentage: numericValue },
+                    { stockQuantity: numericValue }
+                ] : [])
+            ] : []
+
+            const pipeline = [
+                { $match: baseMatch },
+                { $lookup: { from: 'brands', localField: 'brand', foreignField: '_id', as: 'brand' } },
+                { $unwind: { path: '$brand', preserveNullAndEmptyArrays: true } },
+                { $lookup: { from: 'categories', localField: 'category', foreignField: '_id', as: 'category' } },
+                { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+                ...(req.query.rating ? [
+                    { $lookup: { from: 'reviews', localField: '_id', foreignField: 'product', as: 'reviews' } },
+                    { $addFields: { avgRating: { $ifNull: [ { $avg: '$reviews.rating' }, 0 ] } } },
+                    { $match: { avgRating: { $gte: minRating } } }
+                ] : []),
+                ...(isKeywordPresent ? [{ $match: { $or: keywordOr } }] : []),
+                { $sort: Object.keys(sort).length ? sort : { createdAt: -1 } },
+                { $facet: {
+                    results: [
+                        { $skip: skip },
+                        ...(limit ? [{ $limit: limit }] : [])
+                    ],
+                    totalCount: [ { $count: 'count' } ]
+                } }
+            ]
+
+            const aggResult = await Product.aggregate(pipeline)
+            const results = aggResult[0]?.results || []
+            const totalDocs = aggResult[0]?.totalCount?.[0]?.count || 0
+
+            res.set('X-Total-Count', totalDocs)
+            return res.status(200).json(results)
+        }
+
+        // Default path without aggregation
         const totalDocs=await Product.find(filter).sort(sort).populate("brand").countDocuments().exec()
         const results=await Product.find(filter).sort(sort).populate("brand").skip(skip).limit(limit).exec()
 

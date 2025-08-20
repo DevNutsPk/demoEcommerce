@@ -41,3 +41,18 @@ exports.verifyToken=async(req,res,next)=>{
         }
     }
 }
+
+exports.verifyIsAdmin=(req,res,next)=>{
+    try {
+        if(!req.user){
+            return res.status(401).json({message:"Token missing, please login again"})
+        }
+        if(req.user.isAdmin!==true){
+            return res.status(403).json({message:"Access denied. Admins only."})
+        }
+        next()
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}

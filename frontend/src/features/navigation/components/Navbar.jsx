@@ -8,7 +8,7 @@ import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import { Link, useNavigate } from 'react-router-dom';
-import { Badge, Button, Chip, Stack, useMediaQuery, useTheme } from '@mui/material';
+import { Badge, Button, Chip, Stack, TextField, InputAdornment, Autocomplete, useMediaQuery, useTheme } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectUserInfo } from '../../user/UserSlice';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
@@ -18,7 +18,10 @@ import { selectWishlistItems } from '../../wishlist/WishlistSlice';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import TuneIcon from '@mui/icons-material/Tune';
 import { selectProductIsFilterOpen, toggleFilters } from '../../products/ProductSlice';
-
+import SearchIcon from '@mui/icons-material/Search';
+import { selectBrands } from '../../brands/BrandSlice';
+import { selectCategories } from '../../categories/CategoriesSlice';
+import { selectProducts } from '../../products/ProductSlice';
 
 
 export const Navbar=({isProductList=false})=> {
@@ -31,9 +34,44 @@ export const Navbar=({isProductList=false})=> {
   const dispatch=useDispatch()
   const theme=useTheme()
   const is480=useMediaQuery(theme.breakpoints.down(480))
+  const is700=useMediaQuery(theme.breakpoints.down(700))
 
   const wishlistItems=useSelector(selectWishlistItems)
   const isProductFilterOpen=useSelector(selectProductIsFilterOpen)
+
+  const [search,setSearch]=React.useState("")
+  const [searchSuggestions,setSearchSuggestions]=React.useState([])
+  const brands=useSelector(selectBrands)
+  const categories=useSelector(selectCategories)
+  const products=useSelector(selectProducts)
+
+  // Generate search suggestions from database
+  React.useEffect(()=>{
+    const suggestions=[]
+    
+    // Add product titles
+    products?.forEach(product=>{
+      if(product.title && !suggestions.includes(product.title)){
+        suggestions.push(product.title)
+      }
+    })
+    
+    // Add brand names
+    brands?.forEach(brand=>{
+      if(brand.name && !suggestions.includes(brand.name)){
+        suggestions.push(brand.name)
+      }
+    })
+    
+    // Add category names
+    categories?.forEach(category=>{
+      if(category.name && !suggestions.includes(category.name)){
+        suggestions.push(category.name)
+      }
+    })
+    
+    setSearchSuggestions(suggestions)
+  },[products,brands,categories])
 
   const handleOpenUserMenu = (event) => {
     setAnchorElUser(event.currentTarget);
@@ -45,6 +83,25 @@ export const Navbar=({isProductList=false})=> {
 
   const handleToggleFilters=()=>{
     dispatch(toggleFilters())
+  }
+
+  const handleSearchKeyDown=(e)=>{
+    if(e.key==='Enter'){
+      const query=search?.trim()
+      if(loggedInUser?.isAdmin){
+        navigate(query?`/admin/dashboard?keyword=${encodeURIComponent(query)}`:'/admin/dashboard')
+      }
+    }
+  }
+
+  const handleSearchChange=(value)=>{
+    setSearch(value)
+  }
+
+  const handleSearchSelect=(value)=>{
+    if(value && loggedInUser?.isAdmin){
+      navigate(`/admin/dashboard?keyword=${encodeURIComponent(value)}`)
+    }
   }
 
   const settings = [
@@ -62,7 +119,37 @@ export const Navbar=({isProductList=false})=> {
             MERN SHOP
           </Typography>
 
-
+          {
+            loggedInUser?.isAdmin && (
+              <Stack flex={1} alignItems={'center'} justifyContent={'center'} px={is700?1:3}>
+                <Autocomplete
+                  size='small'
+                  freeSolo
+                  options={searchSuggestions}
+                  value={search}
+                  onChange={(event, newValue) => handleSearchSelect(newValue)}
+                  onInputChange={(event, newInputValue) => handleSearchChange(newInputValue)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder='Search products...'
+                  sx={{ width:'100%', maxWidth: 600, display:{ xs:'none', sm:'flex'} }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder='Search products, brands, categories...'
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment:(
+                          <InputAdornment position="start">
+                            <SearchIcon/>
+                          </InputAdornment>
+                        )
+                      }}
+                    />
+                  )}
+                />
+              </Stack>
+            )
+          }
 
           <Stack flexDirection={'row'} alignItems={'center'} justifyContent={'center'} columnGap={2}>
             <Tooltip title="Open settings">
