@@ -17,9 +17,16 @@ const orderSchema=new Schema({
     },
     status:{
         type:String,
-        enum:['Pending','Dispatched','Out for delivery','Cancelled'],
+        enum:['Pending','Dispatched','Out for delivery','Delivered','Cancelled'],
         default:'Pending'
     },
+    statusHistory:[
+        {
+            status:{type:String},
+            changedAt:{type:Date,default:Date.now},
+            changedBy:{type:Schema.Types.ObjectId,ref:"User"}
+        }
+    ],
     paymentMode:{
         type:String,
         enum:['COD','UPI','CARD'],

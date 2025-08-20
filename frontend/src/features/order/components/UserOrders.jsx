@@ -10,6 +10,7 @@ import { loadingAnimation, noOrdersAnimation } from '../../../assets'
 import { toast } from 'react-toastify'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {motion} from 'framer-motion'
+import { OrderStatusTimeline } from '../../../components/OrderStatusTimeline'
 
 
 export const UserOrders = () => {
@@ -174,9 +175,19 @@ export const UserOrders = () => {
                                     </Stack>
 
                                     {/* lower */}
-                                    <Stack mt={2} flexDirection={'row'} justifyContent={'space-between'}>
-                                        <Typography mb={2}>Status : {order.status}</Typography>
+                                    <Stack mt={2} flexDirection={'row'} justifyContent={'space-between'} alignItems={'center'}>
+                                        <Button 
+                                            component={Link} 
+                                            to={`/order-details/${order._id}`}
+                                            variant="outlined"
+                                            size="small"
+                                        >
+                                            View Details
+                                        </Button>
                                     </Stack>
+
+                                    {/* Order Status Timeline */}
+                                    <OrderStatusTimeline order={order} showDetails={false} />
                                         
                                 </Stack>
                             ))

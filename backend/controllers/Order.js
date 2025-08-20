@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const User = require("../models/User");
 
 exports.create=async(req,res)=>{
     try {
@@ -21,6 +22,27 @@ exports.getByUserId=async(req,res)=>{
         return res.status(500).json({message:'Error fetching orders, please trying again later'})
     }
 }
+
+exports.getById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Validate ObjectId format
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ message: "Invalid order ID format" });
+        }
+        
+        const order = await Order.findById(id);
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+        
+        res.status(200).json(order);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Error fetching order details" });
+    }
+};
 
 exports.getAll = async (req, res) => {
     try {
@@ -56,3 +78,81 @@ exports.updateById=async(req,res)=>{
         res.status(500).json({message:'Error updating order, please try again later'})
     }
 }
+
+exports.updateStatus = async (req, res) => {
+    try {
+        console.log('Request received:', { params: req.params, body: req.body, user: req.user });
+        
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        // Validate ObjectId format
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ message: "Invalid order ID format" });
+        }
+        
+        // Validate status
+        const validStatuses = ['Pending', 'Dispatched', 'Out for delivery', 'Delivered', 'Cancelled'];
+        if (!status || !validStatuses.includes(status)) {
+            return res.status(400).json({ 
+                message: "Invalid status value", 
+                validStatuses: validStatuses 
+            });
+        }
+        
+        // Check if user exists and is admin
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(401).json({ message: "Authentication required" });
+        }
+        
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(401).json({ message: "User not found" });
+        }
+        
+        if (!user.isAdmin) {
+            return res.status(403).json({ message: "Forbidden: Admin access required to update order status" });
+        }
+        
+        // Find and update order
+        const order = await Order.findById(id);
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+        
+        console.log('Order found:', { currentStatus: order.status, statusHistory: order.statusHistory });
+        
+        // Initialize statusHistory if it doesn't exist
+        if (!order.statusHistory) {
+            order.statusHistory = [];
+        }
+        
+        // Update status and add to history
+        const previousStatus = order.status;
+        order.status = status;
+        order.statusHistory.push({ 
+            status: status, 
+            changedAt: new Date(),
+            changedBy: userId
+        });
+        
+        console.log('About to save order with:', { newStatus: order.status, statusHistory: order.statusHistory });
+        
+        const savedOrder = await order.save();
+        console.log('Order saved successfully:', savedOrder);
+        
+        res.status(200).json({
+            message: "Order status updated successfully",
+            orderId: order._id,
+            previousStatus: previousStatus,
+            newStatus: status,
+            updatedAt: new Date(),
+            statusHistory: order.statusHistory
+        });
+        
+    } catch (error) {
+        console.log('Error in updateStatus:', error);
+        res.status(500).json({ message: "Error updating order status" });
+    }
+};
