@@ -16,6 +16,8 @@ import { Link, useLocation } from 'react-router-dom';
 import {motion} from 'framer-motion'
 import ClearIcon from '@mui/icons-material/Clear';
 import { ITEMS_PER_PAGE } from '../../../constants';
+import { selectLoggedInUser } from '../../auth/AuthSlice';
+import { canDeleteProducts, isSuperAdmin, isSubAdmin } from '../../../utils/roleUtils';
 
 const sortOptions=[
     {name:"Price: low to high",sort:"price",order:"asc"},
@@ -36,6 +38,7 @@ export const AdminDashBoard = () => {
     const is500=useMediaQuery(theme.breakpoints.down(500))
     const isProductFilterOpen=useSelector(selectProductIsFilterOpen)
     const totalResults=useSelector(selectProductTotalResults)
+    const loggedInUser=useSelector(selectLoggedInUser)
     
     const is1200=useMediaQuery(theme.breakpoints.down(1200))
     const is800=useMediaQuery(theme.breakpoints.down(800))
@@ -59,9 +62,14 @@ export const AdminDashBoard = () => {
         finalFilters['pagination']={page:page,limit:ITEMS_PER_PAGE}
         finalFilters['sort']=sort
 
+        // Sub admins should not see deleted products, super admins can see all
+        if(isSubAdmin(loggedInUser)){
+            finalFilters['user']=true
+        }
+
         dispatch(fetchProductsAsync(finalFilters))
         
-    },[filters,sort,page])
+    },[filters,sort,page,loggedInUser])
 
     const handleBrandFilters=(e)=>{
 
@@ -205,10 +213,12 @@ export const AdminDashBoard = () => {
                         <Stack paddingLeft={2} paddingRight={2} flexDirection={'row'} justifySelf={'flex-end'} alignSelf={'flex-end'} columnGap={is488?1:2}>
                             <Button component={Link} to={`/admin/product-update/${product._id}`} variant='contained'>Update</Button>
                             {
-                                product.isDeleted===true?(
-                                    <Button onClick={()=>handleProductUnDelete(product._id)} color='error' variant='outlined'>Un-delete</Button>
-                                ):(
-                                    <Button onClick={()=>handleProductDelete(product._id)} color='error' variant='outlined'>Delete</Button>
+                                canDeleteProducts(loggedInUser) && (
+                                    product.isDeleted===true?(
+                                        <Button onClick={()=>handleProductUnDelete(product._id)} color='error' variant='outlined'>Un-delete</Button>
+                                    ):(
+                                        <Button onClick={()=>handleProductDelete(product._id)} color='error' variant='outlined'>Delete</Button>
+                                    )
                                 )
                             }
                         </Stack>

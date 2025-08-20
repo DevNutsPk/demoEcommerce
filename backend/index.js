@@ -5,7 +5,6 @@ const morgan=require("morgan")
 const cookieParser=require("cookie-parser")
 const authRoutes=require("./routes/Auth")
 const productRoutes=require("./routes/Product")
-const { verifyToken, verifyIsAdmin } = require('./middleware/VerifyToken')
 const orderRoutes=require("./routes/Order")
 const cartRoutes=require("./routes/Cart")
 const brandRoutes=require("./routes/Brand")
@@ -15,6 +14,7 @@ const addressRoutes=require('./routes/Address')
 const reviewRoutes=require("./routes/Review")
 const wishlistRoutes=require("./routes/Wishlist")
 const { connectToDB } = require("./database/db")
+const { verifyToken, verifyIsAdminRole } = require('./middleware/VerifyToken')
 
 
 // server init
@@ -33,10 +33,7 @@ server.use(morgan("tiny"))
 // routeMiddleware
 server.use("/auth",authRoutes)
 server.use("/users",userRoutes)
-// Public product routes (listing, details)
 server.use("/products",productRoutes)
-// Admin-only alias under /api/products for product modifications
-server.use("/api/products", verifyToken, verifyIsAdmin, productRoutes)
 server.use("/orders",orderRoutes)
 server.use("/cart",cartRoutes)
 server.use("/brands",brandRoutes)
@@ -44,6 +41,9 @@ server.use("/categories",categoryRoutes)
 server.use("/address",addressRoutes)
 server.use("/reviews",reviewRoutes)
 server.use("/wishlist",wishlistRoutes)
+
+// Admin-only alias under /api/products for product modifications
+server.use("/api/products", verifyToken, verifyIsAdminRole, productRoutes)
 
 
 

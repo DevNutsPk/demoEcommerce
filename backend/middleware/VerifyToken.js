@@ -42,17 +42,78 @@ exports.verifyToken=async(req,res,next)=>{
     }
 }
 
+// Legacy admin check (for backward compatibility)
 exports.verifyIsAdmin=(req,res,next)=>{
     try {
         if(!req.user){
             return res.status(401).json({message:"Token missing, please login again"})
         }
-        if(req.user.isAdmin!==true){
+        if(req.user.role !== 'super_admin' && req.user.role !== 'sub_admin'){
             return res.status(403).json({message:"Access denied. Admins only."})
         }
         next()
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+// Super Admin only access
+exports.verifyIsSuperAdmin=(req,res,next)=>{
+    try {
+        if(!req.user){
+            return res.status(401).json({message:"Token missing, please login again"})
+        }
+        if(req.user.role !== 'super_admin'){
+            return res.status(403).json({message:"Access denied. Super Admin only."})
+        }
+        next()
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+// Admin access (Super Admin or Sub Admin)
+exports.verifyIsAdminRole=(req,res,next)=>{
+    try {
+        if(!req.user){
+            return res.status(401).json({message:"Token missing, please login again"})
+        }
+        if(req.user.role !== 'super_admin' && req.user.role !== 'sub_admin'){
+            return res.status(403).json({message:"Access denied. Admin role required."})
+        }
+        next()
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+// Check if user has specific permission
+exports.hasPermission=(permission)=>{
+    return (req,res,next)=>{
+        try {
+            if(!req.user){
+                return res.status(401).json({message:"Token missing, please login again"})
+            }
+            
+            const permissions = {
+                'super_admin': ['all'],
+                'sub_admin': ['create_product', 'update_product', 'read_products', 'read_orders'],
+                'user': ['read_products', 'create_order', 'read_own_orders']
+            }
+            
+            const userPermissions = permissions[req.user.role] || []
+            
+            if(userPermissions.includes('all') || userPermissions.includes(permission)){
+                next()
+            } else {
+                return res.status(403).json({message:`Access denied. Permission '${permission}' required.`})
+            }
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ message: "Internal Server Error" });
+        }
     }
 }
