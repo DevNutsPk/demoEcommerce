@@ -3,10 +3,10 @@ import React from 'react'
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { useDispatch } from 'react-redux';
-import { deleteCartItemByIdAsync, updateCartItemByIdAsync } from '../CartSlice';
+import { deleteCartItemByIdAsync, updateCartItemByIdAsync, updateLocalCartItem, removeFromLocalCart } from '../CartSlice';
 import { Link } from 'react-router-dom';
 
-export const CartItem = ({id,thumbnail,title,category,brand,price,quantity,stockQuantity,productId}) => {
+export const CartItem = ({id,thumbnail,title,category,brand,price,quantity,stockQuantity,productId,isGuestMode}) => {
 
 
     const dispatch=useDispatch()
@@ -16,21 +16,38 @@ export const CartItem = ({id,thumbnail,title,category,brand,price,quantity,stock
     const is552=useMediaQuery(theme.breakpoints.down(552))
 
     const handleAddQty=()=>{
-        const update={_id:id,quantity:quantity+1}
-        dispatch(updateCartItemByIdAsync(update))
+        if (isGuestMode) {
+            dispatch(updateLocalCartItem({id, quantity: quantity + 1}))
+        } else {
+            const update={_id:id,quantity:quantity+1}
+            dispatch(updateCartItemByIdAsync(update))
+        }
     }
+    
     const handleRemoveQty=()=>{
         if(quantity===1){
-            dispatch(deleteCartItemByIdAsync(id))
+            if (isGuestMode) {
+                dispatch(removeFromLocalCart(id))
+            } else {
+                dispatch(deleteCartItemByIdAsync(id))
+            }
         }
         else{
-            const update={_id:id,quantity:quantity-1}
-            dispatch(updateCartItemByIdAsync(update))
+            if (isGuestMode) {
+                dispatch(updateLocalCartItem({id, quantity: quantity - 1}))
+            } else {
+                const update={_id:id,quantity:quantity-1}
+                dispatch(updateCartItemByIdAsync(update))
+            }
         }
     }
 
     const handleProductRemove=()=>{
-        dispatch(deleteCartItemByIdAsync(id))
+        if (isGuestMode) {
+            dispatch(removeFromLocalCart(id))
+        } else {
+            dispatch(deleteCartItemByIdAsync(id))
+        }
     }
 
 

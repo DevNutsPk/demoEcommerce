@@ -21,7 +21,7 @@ export const OrderSuccessPage = () => {
 
     useEffect(()=>{
         if(!currentOrder){
-            navigate("/")
+            navigate("/home")
         }
     },[currentOrder])
 

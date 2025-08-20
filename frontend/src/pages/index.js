@@ -4,6 +4,7 @@ import { CartPage } from "./CartPage";
 import { CheckoutPage } from "./CheckoutPage";
 import { ForgotPasswordPage } from "./ForgotPasswordPage";
 import { HomePage } from "./HomePage";
+import { LandingPage } from "./LandingPage";
 import { LoginPage } from "./LoginPage";
 import { OrderSuccessPage } from "./OrderSuccessPage";
 import { OrderDetailPage } from "./OrderDetailPage";
@@ -22,6 +23,7 @@ export {
     ForgotPasswordPage,
     ResetPasswordPage,
     HomePage,
+    LandingPage,
     ProductDetailsPage,
     CartPage,
     UserProfilePage,

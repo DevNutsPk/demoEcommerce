@@ -8,7 +8,7 @@ import { Logout } from './features/auth/components/Logout';
 import { Protected } from './features/auth/components/Protected';
 import { useAuthCheck } from "./hooks/useAuth/useAuthCheck";
 import { useFetchLoggedInUserDetails } from "./hooks/useAuth/useFetchLoggedInUserDetails";
-import { AddProductPage, AdminOrdersPage, CartPage, CheckoutPage, ForgotPasswordPage, HomePage, LoginPage, OrderDetailPage, OrderSuccessPage, OtpVerificationPage, ProductDetailsPage, ProductUpdatePage, ResetPasswordPage, SignupPage, UserOrdersPage, UserProfilePage, WishlistPage } from './pages';
+import { AddProductPage, AdminOrdersPage, CartPage, CheckoutPage, ForgotPasswordPage, HomePage, LandingPage, LoginPage, OrderDetailPage, OrderSuccessPage, OtpVerificationPage, ProductDetailsPage, ProductUpdatePage, ResetPasswordPage, SignupPage, UserOrdersPage, UserProfilePage, WishlistPage } from './pages';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
@@ -26,13 +26,19 @@ function App() {
   const routes = createBrowserRouter(
     createRoutesFromElements(
       <>
+        {/* Public routes - accessible without authentication */}
+        <Route path='/' element={<HomePage/>}/>
+        <Route path='/landing' element={<LandingPage/>}/>
         <Route path='/signup' element={<SignupPage/>}/>
         <Route path='/login' element={<LoginPage/>}/>
         <Route path='/verify-otp' element={<OtpVerificationPage/>}/>
         <Route path='/forgot-password' element={<ForgotPasswordPage/>}/>
         <Route path='/reset-password/:userId/:passwordResetToken' element={<ResetPasswordPage/>}/>
+        <Route path='/product-details/:id' element={<ProductDetailsPage/>}/>
+        <Route path='/cart' element={<CartPage/>}/>
+        
+        {/* Protected routes - require authentication */}
         <Route exact path='/logout' element={<Protected><Logout/></Protected>}/>
-        <Route exact path='/product-details/:id' element={<Protected><ProductDetailsPage/></Protected>}/>
 
         {
           loggedInUser?.isAdmin?(
@@ -42,13 +48,13 @@ function App() {
             <Route path='/admin/product-update/:id' element={<Protected><ProductUpdatePage/></Protected>}/>
             <Route path='/admin/add-product' element={<Protected><AddProductPage/></Protected>}/>
             <Route path='/admin/orders'  element={<Protected><AdminOrdersPage/></Protected>}/>
+            <Route path='/home' element={<Navigate to={'/admin/dashboard'}/>}/>
             <Route path='*' element={<Navigate to={'/admin/dashboard'}/>}/>
             </>
           ):(
             // user routes
             <>
-            <Route path='/' element={<Protected><HomePage/></Protected>}/>
-            <Route path='/cart' element={<Protected><CartPage/></Protected>}/>
+            <Route path='/home' element={<HomePage/>}/>
             <Route path='/profile' element={<Protected><UserProfilePage/></Protected>}/>
             <Route path='/checkout' element={<Protected><CheckoutPage/></Protected>}/>
             <Route path='/order-success/:id' element={<Protected><OrderSuccessPage/></Protected>}/>

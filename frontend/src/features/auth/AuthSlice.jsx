@@ -120,6 +120,10 @@ const authSlice=createSlice({
         },
         clearResetPasswordError:(state)=>{
             state.resetPasswordError=null
+        },
+        setGuestModeForCart:(state, action)=>{
+            // This will be used to signal cart to switch to guest mode
+            state.shouldSetGuestMode = action.payload
         }
 
         
@@ -251,7 +255,7 @@ export const selectResetPasswordSuccessMessage=(state)=>state.AuthSlice.resetPas
 export const selectResetPasswordError=(state)=>state.AuthSlice.resetPasswordError
 
 // exporting reducers
-export const {clearAuthSuccessMessage,clearAuthErrors,resetAuthStatus,clearSignupError,resetSignupStatus,clearLoginError,resetLoginStatus,clearOtpVerificationError,resetOtpVerificationStatus,clearResendOtpError,clearResendOtpSuccessMessage,resetResendOtpStatus,clearForgotPasswordError,clearForgotPasswordSuccessMessage,resetForgotPasswordStatus,clearResetPasswordError,clearResetPasswordSuccessMessage,resetResetPasswordStatus}=authSlice.actions
+export const {clearAuthSuccessMessage,clearAuthErrors,resetAuthStatus,clearSignupError,resetSignupStatus,clearLoginError,resetLoginStatus,clearOtpVerificationError,resetOtpVerificationStatus,clearResendOtpError,clearResendOtpSuccessMessage,resetResendOtpStatus,clearForgotPasswordError,clearForgotPasswordSuccessMessage,resetForgotPasswordStatus,clearResetPasswordError,clearResetPasswordSuccessMessage,resetResetPasswordStatus,setGuestModeForCart}=authSlice.actions
 
 export default authSlice.reducer
 

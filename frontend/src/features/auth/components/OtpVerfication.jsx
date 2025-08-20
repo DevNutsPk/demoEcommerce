@@ -6,6 +6,7 @@ import { LoadingButton } from '@mui/lab'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from "react-hook-form"
 import {toast} from 'react-toastify'
+import { syncLocalCartAsync } from '../../cart/CartSlice'
 
 
 export const OtpVerfication = () => {
@@ -26,7 +27,25 @@ export const OtpVerfication = () => {
             navigate('/login')
         }
         else if(loggedInUser && loggedInUser?.isVerified){
-            navigate("/")
+            // Sync local cart to database when user completes verification
+            const localCart = localStorage.getItem('guest_cart')
+            if (localCart && JSON.parse(localCart).length > 0) {
+                dispatch(syncLocalCartAsync(loggedInUser._id))
+            }
+            
+            // Check if there's a redirect URL stored
+            const redirectUrl = localStorage.getItem('redirectAfterLogin')
+            if (redirectUrl) {
+                localStorage.removeItem('redirectAfterLogin')
+                navigate(redirectUrl)
+                return
+            }
+            
+            if(loggedInUser.isAdmin) {
+                navigate("/admin/dashboard")
+            } else {
+                navigate("/")
+            }
         }
     },[loggedInUser])
 

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { clearSelectedProduct, fetchProductByIdAsync, resetProductFetchStatus, selectProductFetchStatus, selectSelectedProduct } from '../ProductSlice'
 import { Box,Checkbox,Rating, Stack,Typography, useMediaQuery,Button,Paper} from '@mui/material'
-import { addToCartAsync, resetCartItemAddStatus, selectCartItemAddStatus, selectCartItems } from '../../cart/CartSlice'
+import { addToCartAsync, resetCartItemAddStatus, selectCartItemAddStatus, selectAllCartItems, selectIsGuestMode, addToLocalCart } from '../../cart/CartSlice'
 import { selectLoggedInUser } from '../../auth/AuthSlice'
 import { fetchReviewsByProductIdAsync,resetReviewFetchStatus,selectReviewFetchStatus,selectReviews,} from '../../review/ReviewSlice'
 import { Reviews } from '../../review/components/Reviews'
@@ -34,7 +34,8 @@ export const ProductDetails = () => {
     const product=useSelector(selectSelectedProduct)
     const loggedInUser=useSelector(selectLoggedInUser)
     const dispatch=useDispatch()
-    const cartItems=useSelector(selectCartItems)
+    const cartItems=useSelector(selectAllCartItems) // Use unified cart selector
+    const isGuestMode=useSelector(selectIsGuestMode)
     const cartItemAddStatus=useSelector(selectCartItemAddStatus)
     const [quantity,setQuantity]=useState(1)
     const [selectedSize,setSelectedSize]=useState('')
@@ -52,9 +53,10 @@ export const ProductDetails = () => {
 
     const wishlistItems=useSelector(selectWishlistItems)
 
-
-
-    const isProductAlreadyInCart=cartItems.some((item)=>item.product._id===id)
+    // Check if product is in cart differently for guest vs authenticated users
+    const isProductAlreadyInCart = isGuestMode 
+        ? cartItems.some((item) => item.productId === id)
+        : cartItems.some((item) => item.product._id === id)
     const isProductAlreadyinWishlist=wishlistItems.some((item)=>item.product._id===id)
 
     const productFetchStatus=useSelector(selectProductFetchStatus)
@@ -135,8 +137,21 @@ export const ProductDetails = () => {
     },[])
 
     const handleAddToCart=()=>{
-        const item={user:loggedInUser._id,product:id,quantity}
-        dispatch(addToCartAsync(item))
+        if (isGuestMode) {
+            // Add to local storage for guest users
+            const localCartItem = {
+                productId: id,
+                quantity: quantity,
+                size: selectedSize || 'M', // Use selected size or default
+                color: selectedColorIndex >= 0 ? COLORS[selectedColorIndex] : 'Default'
+            }
+            dispatch(addToLocalCart(localCartItem))
+            toast.success("Product added to cart")
+        } else {
+            // Add to database for logged-in users
+            const item={user:loggedInUser._id,product:id,quantity}
+            dispatch(addToCartAsync(item))
+        }
         setQuantity(1)
     }
 

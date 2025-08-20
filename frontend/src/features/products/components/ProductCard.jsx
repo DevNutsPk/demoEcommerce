@@ -7,7 +7,7 @@ import Checkbox from '@mui/material/Checkbox';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectWishlistItems } from '../../wishlist/WishlistSlice';
 import { selectLoggedInUser } from '../../auth/AuthSlice';
-import { addToCartAsync,selectCartItems } from '../../cart/CartSlice';
+import { addToCartAsync, selectAllCartItems, selectIsGuestMode, addToLocalCart } from '../../cart/CartSlice';
 import {motion} from 'framer-motion'
 
 export const ProductCard = ({id,title,price,thumbnail,brand,stockQuantity,handleAddRemoveFromWishlist,isWishlistCard,isAdminCard}) => {
@@ -16,7 +16,8 @@ export const ProductCard = ({id,title,price,thumbnail,brand,stockQuantity,handle
     const navigate=useNavigate()
     const wishlistItems=useSelector(selectWishlistItems)
     const loggedInUser=useSelector(selectLoggedInUser)
-    const cartItems=useSelector(selectCartItems)
+    const cartItems=useSelector(selectAllCartItems) // This will return local or database cart based on guest mode
+    const isGuestMode=useSelector(selectIsGuestMode)
     const dispatch=useDispatch()
     let isProductAlreadyinWishlist=-1
 
@@ -32,12 +33,28 @@ export const ProductCard = ({id,title,price,thumbnail,brand,stockQuantity,handle
 
     isProductAlreadyinWishlist=wishlistItems.some((item)=>item.product._id===id)
 
-    const isProductAlreadyInCart=cartItems.some((item)=>item.product._id===id)
+    const isProductAlreadyInCart = isGuestMode 
+        ? cartItems.some((item) => item.productId === id)
+        : cartItems.some((item) => item.product._id === id)
 
     const handleAddToCart=async(e)=>{
         e.stopPropagation()
-        const data={user:loggedInUser?._id,product:id}
-        dispatch(addToCartAsync(data))
+        
+        if (isGuestMode) {
+            // Add to local storage for guest users
+            const localCartItem = {
+                productId: id,
+                quantity: 1,
+                // You can add default size and color or handle them later
+                size: 'M', // Default size
+                color: 'Default' // Default color
+            }
+            dispatch(addToLocalCart(localCartItem))
+        } else {
+            // Add to database for logged-in users
+            const data={user:loggedInUser?._id,product:id}
+            dispatch(addToCartAsync(data))
+        }
     }
 
 
