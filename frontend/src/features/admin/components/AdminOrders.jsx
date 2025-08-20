@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { getAllOrdersAsync, resetOrderUpdateStatus, selectOrderUpdateStatus, selectOrders, updateOrderByIdAsync } from '../../order/OrderSlice'
+import { getAllOrdersAsync, resetOrderUpdateStatus, selectOrderUpdateStatus, selectOrders, updateOrderStatusAsync } from '../../order/OrderSlice'
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -53,9 +53,10 @@ export const AdminOrders = () => {
 
 
   const handleUpdateOrder=(data)=>{
-    const update={...data,_id:orders[editIndex]._id}
+    const orderId = orders[editIndex]._id
+    const status = data.status
     setEditIndex(-1)
-    dispatch(updateOrderByIdAsync(update))
+    dispatch(updateOrderStatusAsync({orderId, status}))
   }
 
 

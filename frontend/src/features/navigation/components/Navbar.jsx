@@ -12,7 +12,7 @@ import { Badge, Button, Chip, Stack, TextField, InputAdornment, Autocomplete, us
 import { useDispatch, useSelector } from 'react-redux';
 import { selectUserInfo } from '../../user/UserSlice';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
-import { selectCartItems } from '../../cart/CartSlice';
+import { selectAllCartItems } from '../../cart/CartSlice';
 import { selectLoggedInUser } from '../../auth/AuthSlice';
 import { selectWishlistItems } from '../../wishlist/WishlistSlice';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -28,7 +28,7 @@ export const Navbar=({isProductList=false})=> {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const userInfo=useSelector(selectUserInfo)
-  const cartItems=useSelector(selectCartItems)
+  const cartItems=useSelector(selectAllCartItems) // This will work for both guest and authenticated users
   const loggedInUser=useSelector(selectLoggedInUser)
   const navigate=useNavigate()
   const dispatch=useDispatch()
@@ -105,9 +105,9 @@ export const Navbar=({isProductList=false})=> {
   }
 
   const settings = [
-    {name:"Home",to:"/"},
-    {name:'Profile',to:loggedInUser?.isAdmin?"/admin/profile":"/profile"},
-    {name:loggedInUser?.isAdmin?'Orders':'My orders',to:loggedInUser?.isAdmin?"/admin/orders":"/orders"},
+    {name:"Home",to:(loggedInUser?.isAdmin)?"/admin/dashboard":"/"},
+    {name:'Profile',to:(loggedInUser?.isAdmin)?"/admin/profile":"/profile"},
+    {name:(loggedInUser?.isAdmin)?'Orders':'My orders',to:(loggedInUser?.isAdmin)?"/admin/orders":"/orders"},
     {name:'Logout',to:"/logout"},
   ];
 
@@ -115,7 +115,7 @@ export const Navbar=({isProductList=false})=> {
     <AppBar position="sticky" sx={{backgroundColor:"white",boxShadow:"none",color:"text.primary"}}>
         <Toolbar sx={{p:1,height:"4rem",display:"flex",justifyContent:"space-around"}}>
 
-          <Typography variant="h6" noWrap component="a" href="/" sx={{ mr: 2, display: { xs: 'none', md: 'flex' },fontWeight: 700, letterSpacing: '.3rem', color: 'inherit', textDecoration: 'none', }}>
+          <Typography variant="h6" noWrap component="a" href={(loggedInUser?.isAdmin)?"/admin/dashboard":"/"} sx={{ mr: 2, display: { xs: 'none', md: 'flex' },fontWeight: 700, letterSpacing: '.3rem', color: 'inherit', textDecoration: 'none', }}>
             MERN SHOP
           </Typography>
 
@@ -152,69 +152,76 @@ export const Navbar=({isProductList=false})=> {
           }
 
           <Stack flexDirection={'row'} alignItems={'center'} justifyContent={'center'} columnGap={2}>
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt={userInfo?.name} src="null" />
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: '45px' }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
-            >
-
-              {
-                loggedInUser?.isAdmin && 
-              
-                <MenuItem  onClick={handleCloseUserMenu}>
-                  <Typography component={Link} color={'text.primary'} sx={{textDecoration:"none"}} to="/admin/add-product" textAlign="center">Add new Product</Typography>
-                </MenuItem>
-              
-              }
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography component={Link} color={'text.primary'} sx={{textDecoration:"none"}} to={setting.to} textAlign="center">{setting.name}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
-            <Typography variant='h6' fontWeight={300}>{is480?`${userInfo?.name.toString().split(" ")[0]}`:`Hey👋, ${userInfo?.name}`}</Typography>
-            {loggedInUser.isAdmin && <Button variant='contained'>Admin</Button>}
-            <Stack sx={{flexDirection:"row",columnGap:"1rem",alignItems:"center",justifyContent:"center"}}>
-
             
-            {
-            cartItems?.length>0 && 
-            <Badge  badgeContent={cartItems.length} color='error'>
+            {/* Cart icon - always visible for both guest and logged-in users */}
+            <Badge  badgeContent={cartItems?.length || 0} color='error' showZero={false}>
               <IconButton onClick={()=>navigate("/cart")}>
                 <ShoppingCartOutlinedIcon />
-                </IconButton>
+              </IconButton>
             </Badge>
-            }
-            
+
+            {/* Wishlist icon - only for logged-in non-admin users */}
             {
-              !loggedInUser?.isAdmin &&
-                  <Stack>
-                      <Badge badgeContent={wishlistItems?.length} color='error'>
-                          <IconButton component={Link} to={"/wishlist"}><FavoriteBorderIcon /></IconButton>
-                      </Badge>
-                  </Stack>
+              loggedInUser && !loggedInUser?.isAdmin &&
+                <Badge badgeContent={wishlistItems?.length} color='error'>
+                  <IconButton component={Link} to={"/wishlist"}><FavoriteBorderIcon /></IconButton>
+                </Badge>
             }
+
+            {/* Filter toggle - only on product list pages */}
             {
               isProductList && <IconButton onClick={handleToggleFilters}><TuneIcon sx={{color:isProductFilterOpen?"black":""}}/></IconButton>
             }
-            
-            </Stack>
+
+            {/* User menu or Login/Signup buttons */}
+            {loggedInUser ? (
+              <>
+                <Tooltip title="Open settings">
+                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                    <Avatar alt={userInfo?.name} src="null" />
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  sx={{ mt: '45px' }}
+                  id="menu-appbar"
+                  anchorEl={anchorElUser}
+                  anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  keepMounted
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  open={Boolean(anchorElUser)}
+                  onClose={handleCloseUserMenu}
+                >
+
+                  {
+                    loggedInUser?.isAdmin && 
+                  
+                    <MenuItem  onClick={handleCloseUserMenu}>
+                      <Typography component={Link} color={'text.primary'} sx={{textDecoration:"none"}} to="/admin/add-product" textAlign="center">Add new Product</Typography>
+                    </MenuItem>
+                  
+                  }
+                  {settings.map((setting) => (
+                    <MenuItem key={setting.name} onClick={handleCloseUserMenu}>
+                      <Typography component={Link} color={'text.primary'} sx={{textDecoration:"none"}} to={setting.to} textAlign="center">{setting.name}</Typography>
+                    </MenuItem>
+                  ))}
+                </Menu>
+                <Typography variant='h6' fontWeight={300}>{is480?`${userInfo?.name?.toString().split(" ")[0] || 'User'}`:`Hey👋, ${userInfo?.name || 'User'}`}</Typography>
+                {loggedInUser?.isAdmin && <Button variant='contained'>Admin</Button>}
+              </>
+            ) : (
+              <Stack flexDirection={'row'} spacing={2}>
+                <Button component={Link} to="/login" variant="outlined">Login</Button>
+                <Button component={Link} to="/signup" variant="contained">Sign Up</Button>
+              </Stack>
+            )}
+
           </Stack>
         </Toolbar>
     </AppBar>

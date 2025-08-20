@@ -27,7 +27,11 @@ export const Signup = () => {
       navigate("/verify-otp")
     }
     else if(loggedInUser){
-      navigate("/")
+      if(loggedInUser.isAdmin) {
+        navigate("/admin/dashboard")
+      } else {
+        navigate("/home")
+      }
     }
   },[loggedInUser])
 

@@ -36,3 +36,21 @@ export const updateOrderById=async(update)=>{
         throw error.response.data
     }
 }
+
+export const getOrderById=async(orderId)=>{
+    try {
+        const res=await axiosi.get(`/orders/${orderId}`)
+        return res.data
+    } catch (error) {
+        throw error.response.data
+    }
+}
+
+export const updateOrderStatus=async(orderId, status)=>{
+    try {
+        const res=await axiosi.put(`/orders/${orderId}/status`, { status })
+        return res.data
+    } catch (error) {
+        throw error.response.data
+    }
+}

@@ -9,6 +9,7 @@ import { LoadingButton } from '@mui/lab';
 import {selectLoggedInUser,loginAsync,selectLoginStatus, selectLoginError, clearLoginError, resetLoginStatus} from '../AuthSlice'
 import { toast } from 'react-toastify'
 import {MotionConfig, motion} from 'framer-motion'
+import { syncLocalCartAsync } from '../../cart/CartSlice'
 
 export const Login = () => {
   const dispatch=useDispatch()
@@ -24,7 +25,25 @@ export const Login = () => {
   // handles user redirection
   useEffect(()=>{
     if(loggedInUser && loggedInUser?.isVerified){
-      navigate("/")
+      // Sync local cart to database when user logs in
+      const localCart = localStorage.getItem('guest_cart')
+      if (localCart && JSON.parse(localCart).length > 0) {
+        dispatch(syncLocalCartAsync(loggedInUser._id))
+      }
+      
+      // Check if there's a redirect URL stored
+      const redirectUrl = localStorage.getItem('redirectAfterLogin')
+      if (redirectUrl) {
+        localStorage.removeItem('redirectAfterLogin')
+        navigate(redirectUrl)
+        return
+      }
+      
+      if(loggedInUser.isAdmin) {
+        navigate("/admin/dashboard")
+      } else {
+        navigate("/")
+      }
     }
     else if(loggedInUser && !loggedInUser?.isVerified){
       navigate("/verify-otp")
