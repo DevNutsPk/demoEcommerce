@@ -1,5 +1,5 @@
 import {createAsyncThunk, createSlice} from '@reduxjs/toolkit'
-import { createOrder, getAllOrders, getOrderByUserId, updateOrderById } from './OrderApi'
+import { createOrder, getAllOrders, getOrderByUserId, updateOrderById, getOrderById, updateOrderStatus } from './OrderApi'
 
 
 const initialState={
@@ -30,6 +30,16 @@ export const getOrderByUserIdAsync=createAsyncThunk("orders/getOrderByUserIdAsyn
 export const updateOrderByIdAsync=createAsyncThunk("orders/updateOrderByIdAsync",async(update)=>{
     const updatedOrder=await updateOrderById(update)
     return updatedOrder
+})
+
+export const getOrderByIdAsync=createAsyncThunk("orders/getOrderByIdAsync",async(orderId)=>{
+    const order=await getOrderById(orderId)
+    return order
+})
+
+export const updateOrderStatusAsync=createAsyncThunk("orders/updateOrderStatusAsync",async({orderId, status})=>{
+    const result=await updateOrderStatus(orderId, status)
+    return {orderId, ...result}
 })
 
 const orderSlice=createSlice({
@@ -94,6 +104,40 @@ const orderSlice=createSlice({
                 state.orders[index]=action.payload
             })
             .addCase(updateOrderByIdAsync.rejected,(state,action)=>{
+                state.orderUpdateStatus='rejected'
+                state.errors=action.error
+            })
+
+            .addCase(getOrderByIdAsync.pending,(state)=>{
+                state.status='pending'
+            })
+            .addCase(getOrderByIdAsync.fulfilled,(state,action)=>{
+                state.status='fulfilled'
+                state.currentOrder=action.payload
+            })
+            .addCase(getOrderByIdAsync.rejected,(state,action)=>{
+                state.status='rejected'
+                state.errors=action.error
+            })
+
+            .addCase(updateOrderStatusAsync.pending,(state)=>{
+                state.orderUpdateStatus='pending'
+            })
+            .addCase(updateOrderStatusAsync.fulfilled,(state,action)=>{
+                state.orderUpdateStatus='fulfilled'
+                // Update the order in the orders array if it exists
+                const index=state.orders.findIndex((order)=>order._id===action.payload.orderId)
+                if(index !== -1) {
+                    state.orders[index].status = action.payload.newStatus
+                    state.orders[index].statusHistory = action.payload.statusHistory
+                }
+                // Update current order if it matches
+                if(state.currentOrder && state.currentOrder._id === action.payload.orderId) {
+                    state.currentOrder.status = action.payload.newStatus
+                    state.currentOrder.statusHistory = action.payload.statusHistory
+                }
+            })
+            .addCase(updateOrderStatusAsync.rejected,(state,action)=>{
                 state.orderUpdateStatus='rejected'
                 state.errors=action.error
             })
