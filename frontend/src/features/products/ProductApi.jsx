@@ -27,6 +27,10 @@ export const fetchProducts=async(filters)=>{
         queryString+=`page=${filters.pagination.page}&limit=${filters.pagination.limit}&`
     }
 
+    if(filters.keyword){
+        queryString+=`keyword=${encodeURIComponent(filters.keyword)}&`
+    }
+
     if(filters.sort){
         queryString+=`sort=${filters.sort.sort}&order=${filters.sort.order}&`
     }
