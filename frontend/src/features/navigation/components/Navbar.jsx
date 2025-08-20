@@ -22,6 +22,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { selectBrands } from '../../brands/BrandSlice';
 import { selectCategories } from '../../categories/CategoriesSlice';
 import { selectProducts } from '../../products/ProductSlice';
+import { isAdmin, getRoleDisplayName } from '../../../utils/roleUtils';
 
 
 export const Navbar=({isProductList=false})=> {
@@ -88,7 +89,7 @@ export const Navbar=({isProductList=false})=> {
   const handleSearchKeyDown=(e)=>{
     if(e.key==='Enter'){
       const query=search?.trim()
-      if(loggedInUser?.isAdmin){
+      if(isAdmin(loggedInUser)){
         navigate(query?`/admin/dashboard?keyword=${encodeURIComponent(query)}`:'/admin/dashboard')
       }
     }
@@ -99,15 +100,15 @@ export const Navbar=({isProductList=false})=> {
   }
 
   const handleSearchSelect=(value)=>{
-    if(value && loggedInUser?.isAdmin){
+    if(value && isAdmin(loggedInUser)){
       navigate(`/admin/dashboard?keyword=${encodeURIComponent(value)}`)
     }
   }
 
   const settings = [
     {name:"Home",to:"/"},
-    {name:'Profile',to:loggedInUser?.isAdmin?"/admin/profile":"/profile"},
-    {name:loggedInUser?.isAdmin?'Orders':'My orders',to:loggedInUser?.isAdmin?"/admin/orders":"/orders"},
+    {name:'Profile',to:isAdmin(loggedInUser)?"/admin/profile":"/profile"},
+    {name:isAdmin(loggedInUser)?'Orders':'My orders',to:isAdmin(loggedInUser)?"/admin/orders":"/orders"},
     {name:'Logout',to:"/logout"},
   ];
 
@@ -120,7 +121,7 @@ export const Navbar=({isProductList=false})=> {
           </Typography>
 
           {
-            loggedInUser?.isAdmin && (
+            isAdmin(loggedInUser) && (
               <Stack flex={1} alignItems={'center'} justifyContent={'center'} px={is700?1:3}>
                 <Autocomplete
                   size='small'
@@ -175,7 +176,7 @@ export const Navbar=({isProductList=false})=> {
             >
 
               {
-                loggedInUser?.isAdmin && 
+                isAdmin(loggedInUser) && 
               
                 <MenuItem  onClick={handleCloseUserMenu}>
                   <Typography component={Link} color={'text.primary'} sx={{textDecoration:"none"}} to="/admin/add-product" textAlign="center">Add new Product</Typography>
@@ -189,7 +190,7 @@ export const Navbar=({isProductList=false})=> {
               ))}
             </Menu>
             <Typography variant='h6' fontWeight={300}>{is480?`${userInfo?.name.toString().split(" ")[0]}`:`Hey👋, ${userInfo?.name}`}</Typography>
-            {loggedInUser.isAdmin && <Button variant='contained'>Admin</Button>}
+            {isAdmin(loggedInUser) && <Button variant='contained'>{getRoleDisplayName(loggedInUser)}</Button>}
             <Stack sx={{flexDirection:"row",columnGap:"1rem",alignItems:"center",justifyContent:"center"}}>
 
             
@@ -203,7 +204,7 @@ export const Navbar=({isProductList=false})=> {
             }
             
             {
-              !loggedInUser?.isAdmin &&
+              !isAdmin(loggedInUser) &&
                   <Stack>
                       <Badge badgeContent={wishlistItems?.length} color='error'>
                           <IconButton component={Link} to={"/wishlist"}><FavoriteBorderIcon /></IconButton>

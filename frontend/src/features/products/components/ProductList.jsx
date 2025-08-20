@@ -23,6 +23,7 @@ import { motion } from 'framer-motion'
 import { ProductBanner } from './ProductBanner'
 import ClearIcon from '@mui/icons-material/Clear';
 import Lottie from 'lottie-react'
+import { isAdmin, isSubAdmin } from '../../../utils/roleUtils';
 
 
 const sortOptions=[
@@ -103,7 +104,8 @@ export const ProductList = () => {
         finalFilters['pagination']={page:page,limit:ITEMS_PER_PAGE}
         finalFilters['sort']=sort
 
-        if(!loggedInUser?.isAdmin){
+        // Only regular users (not admins) should filter out deleted products
+        if(!isAdmin(loggedInUser)){
             finalFilters['user']=true
         }
 
