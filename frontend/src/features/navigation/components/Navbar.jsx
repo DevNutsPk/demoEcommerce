@@ -101,8 +101,13 @@ export const Navbar=({isProductList=false})=> {
                 </MenuItem>
               ))}
             </Menu>
-            <Typography variant='h6' fontWeight={300}>{is480?`${userInfo?.name.toString().split(" ")[0]}`:`Hey👋, ${userInfo?.name}`}</Typography>
-            {loggedInUser.isAdmin && <Button variant='contained'>Admin</Button>}
+            <Typography variant='h6' fontWeight={300}>{is480 
+                                  ? `${userInfo?.name?.toString().split(" ")[0] || ""}` 
+                                  : `Hey👋, ${userInfo?.name || "Guest"}`}
+                              </Typography>
+
+                              {loggedInUser?.isAdmin && <Button variant='contained'>Admin</Button>}
+
             <Stack sx={{flexDirection:"row",columnGap:"1rem",alignItems:"center",justifyContent:"center"}}>
 
             
