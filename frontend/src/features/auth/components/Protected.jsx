@@ -1,13 +1,15 @@
 import { useSelector } from "react-redux"
 import { selectLoggedInUser } from "../AuthSlice"
-import { Navigate } from "react-router"
+import { Navigate, useLocation } from "react-router-dom"
 
+export const Protected = ({ children }) => {
+  const loggedInUser = useSelector(selectLoggedInUser)
+  const location = useLocation()
 
-export const Protected = ({children}) => {
-    const loggedInUser=useSelector(selectLoggedInUser)
+  if (loggedInUser?.isVerified) {
+    return children
+  }
 
-    if(loggedInUser?.isVerified){
-        return children
-    }
-    return <Navigate to={'/login'} replace={true}/>
+  // preserve where the user was heading
+  return <Navigate to={`/login?redirect=${location.pathname}`} replace />
 }
